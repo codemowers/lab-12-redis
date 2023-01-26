@@ -1,10 +1,11 @@
 ---
 apiVersion: codemowers.io/v1alpha1
-kind: KeyDBCluster
+kind: Redis
 metadata:
-  name: redis
+  name: example
 spec:
-  replicas: 3
+  class: dedicated
+  capacity: 512Mi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -32,7 +33,7 @@ spec:
                 - amd64
       containers:
         - name: redis-commander
-          image: harbor.codemowers.eu/docker.io/rediscommander/redis-commander:redis-commander-210
+          image: rediscommander/redis-commander:redis-commander-210
           securityContext:
             runAsNonRoot: true
             runAsUser: 1000
@@ -41,8 +42,6 @@ spec:
             - name: nodejs
               containerPort: 8081
           env:
-            - name: REDIS_HOST
-              value: "redis"
             - name: REDIS_DB
               value: "0"
             - name: USE_SCAN
@@ -53,7 +52,7 @@ spec:
               value: "true"
           envFrom:
             - secretRef:
-                name: redis-secrets
+                name: redis-example-owner-secrets
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -66,7 +65,7 @@ metadata:
     external-dns.alpha.kubernetes.io/target: traefik.codemowers.ee
 spec:
   rules:
-  - host: redis-commander-3nk45yqd6e.codemowers.ee
+  - host: redis-commander-laurivosandi.codemowers.ee
     http:
       paths:
       - pathType: Prefix
@@ -90,7 +89,7 @@ spec:
   selector:
     app: redis-commander
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: nodejs
-    name: http
+    - protocol: TCP
+      port: 80
+      targetPort: nodejs
+      name: http
